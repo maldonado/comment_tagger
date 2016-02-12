@@ -28,3 +28,18 @@ class DiretoryConfig(object):
             'repository_directory' : '../cloned_repositories/',
         }
         return configs[desired_path] 
+
+class TagHandlerConfig(object):
+    """docstring for TagHandlerConfig"""
+    
+    def __init__(self, arg):
+        super(TagHandlerConfig, self).__init__()
+        self.arg = arg
+
+    # '\..*' = regex to remove invisible files/folders
+    def get_parameter(desired_regex):
+        configs = {
+            'unwanted_file_regex' : '\..*',
+            'unwanted_directory_regex' : '\..*',
+        }
+        return configs[desired_regex] 
