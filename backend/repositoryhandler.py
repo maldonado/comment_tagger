@@ -14,7 +14,7 @@ def create_repository_directory(path):
 def has_to_clone_repository(clone_url):
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor()
-    cursor.execute("select count(*) from cloned_repositories where clone_url = %s", (clone_url,))
+    cursor.execute("select count(*) from repositories where clone_url = %s", (clone_url,))
     result = cursor.fetchone()[0]
     connection.close()
     return result == 0
@@ -29,7 +29,7 @@ def clone_repository(clone_url):
 def insert_cloned_repo_info(repository_name):
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor()
-    cursor.execute("insert into cloned_repositories (name, clone_url) values (%s, %s)", (repository_name, clone_url))
+    cursor.execute("insert into repositories (name, clone_url) values (%s, %s)", (repository_name, clone_url))
     connection.commit()
     connection.close()
 

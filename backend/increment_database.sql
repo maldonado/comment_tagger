@@ -1,15 +1,15 @@
-create table cloned_repositories (
+create table repositories (
     id serial,
     name text,
     clone_url text,
     cloned_date timestamp default now()
 )
 
-create table extracted_tags (
+create table tags (
     id serial,
-    cloned_repository_id numeric,
+    repository_id numeric,
     extracted_date timestamp default now(),
     name text,
-    version_date timestamp,
     version_order numeric
 )
+

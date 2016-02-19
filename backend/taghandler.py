@@ -12,9 +12,9 @@ def fetch_repositories(repo_list = tuple([])):
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor()
     if not repo_list:
-        cursor.execute("select id, name, clone_url, cloned_date from cloned_repositories order by 1")
+        cursor.execute("select id, name, clone_url, cloned_date from repositories order by 1")
     else:
-        cursor.execute("select id, name, clone_url, cloned_date from cloned_repositories where name in %s", [tuple(repo_list),])
+        cursor.execute("select id, name, clone_url, cloned_date from repositories where name in %s", [tuple(repo_list),])
     query_return = cursor.fetchall()
     connection.close()
     return query_return
@@ -52,10 +52,10 @@ def snapshot_the_repo(repository_name, tag):
     process.communicate()[1].strip().decode("utf-8")
     clean_unwanted_files(tag_path)
 
-def insert_snapshot_version_info(cloned_repository_id, name, version_date, version_order):
+def insert_snapshot_version_info(repository_id, name, version_date, version_order):
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor()
-    cursor.execute("insert into extracted_tags (cloned_repository_id, name, version_date, version_order) values (%s, %s, to_timestamp(%s, 'YYYY-MM-DD HH24:MI:SS'), %s)", (cloned_repository_id, name, version_date, version_order))
+    cursor.execute("insert into tags (repository_id, name, version_date, version_order) values (%s, %s, to_timestamp(%s, 'YYYY-MM-DD HH24:MI:SS'), %s)", (repository_id, name, version_date, version_order))
     connection.commit()
     connection.close()
 
