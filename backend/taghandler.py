@@ -61,7 +61,7 @@ def insert_snapshot_version_info(repository_id, name, version_date, version_orde
 
 tags_regex = '(\d\d\d\d\-\d\d\-\d\d\s\d\d:\d\d:\d\d)|\(tag:\s([A-Za-z0-9\-\_\.+]*)\)'
 
-repository_list = fetch_repositories()
+repository_list = repositoryfetch_repositories()
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
