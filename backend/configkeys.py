@@ -27,6 +27,7 @@ class DiretoryConfig(object):
         configs = {
             'repository_directory' : '../cloned_repositories/',
             'file_versions_directory' : '../file_versions/',
+            'parsed_files_directory' : '../parsed_files/',
         }
         return configs[desired_path] 
 
@@ -57,5 +58,6 @@ class FileHandlerConfig(object):
         configs = {
             'parseable_files_regex' : '.*\.java$',
             'git_log_file_regex' : '^commit\s([a-z0-9]{40})$|Author:\s(.*?)\<(.*?)\>|Date:\s*([A-Za-z]{3}\s[A-Za-z]{3}\s\d{1,2}\s\d{2}:\d{2}:\d{2}\s\d{4}\s.\d{3,4})|(.*?)\|',
+            'git_deleted_log_file_regex' : '^commit\s([a-z0-9]{40})$|Author:\s(.*?)\<(.*?)\>|Date:\s*([A-Za-z]{3}\s[A-Za-z]{3}\s\d{1,2}\s\d{2}:\d{2}:\d{2}\s\d{4}\s.\d{3,4})|\sdelete\smode\s100644\s(.*)'
         }
         return configs[desired_regex] 

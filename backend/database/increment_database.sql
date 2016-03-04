@@ -22,6 +22,7 @@ create table files (
     extracted_date timestamp default now(),
     name text,
     file_path text,
+    deletion_commit_hash default null,
     UNIQUE(repository_id,name,file_path)
 );
 
@@ -33,10 +34,8 @@ create table file_versions (
     author_email text,
     author_date timestamp,
     version_path text, 
-    has_local_copy boolean default false,
+    older_version_path text,
+    has_local_file boolean default false,
     has_parsed_file boolean default false,
     UNIQUE(file_id, commit_hash)
 );
-
-
-    
