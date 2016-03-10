@@ -26,90 +26,108 @@ def checkout_to_latest_version(repository_name, master_branch):
     return process.communicate()[0].strip().decode("utf-8").split('\n')
 
 def insert_file(repository_id, name, absolute_path, deletion_commit_hash = None):
+    inserted_id = None
+
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor()
-    cursor.execute("insert into files (repository_id, name, file_path, deletion_commit_hash) values (%s,%s,%s,%s) returning id", (repository_id, name, absolute_path, deletion_commit_hash))
-    inserted_id = cursor.fetchone()[0]
+
+    cursor.execute("select count(*) from files where name = %s and file_path = %s ", (name, absolute_path))
+    count_check = cursor.fetchone()[0]
+
+    if count_check == 0:
+        cursor.execute("insert into files (repository_id, name, file_path, deletion_commit_hash) values (%s,%s,%s,%s) returning id", (repository_id, name, absolute_path, deletion_commit_hash))
+        inserted_id = cursor.fetchone()[0]
+
     connection.commit()
     connection.close()
     return inserted_id
 
-def extract_file_versions(repository_id, repository_name, files_results = list()):
+def execute_git_log_to_get_versions(git_log_command, file_id, file_path, repository_path):
+
+
+    connection = PSQLConnection.get_connection()
+    cursor = connection.cursor()
+
+    git_log_file_regex = FileHandlerConfig.get_parameter('git_log_file_regex')
+
+    commit_hash     = ''
+    author_name     = ''
+    author_email    = ''
+    author_date     = ''
+    version_path    = ''
+    older_version_path = ''
+
+    command = git_log_command + file_path
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_path)
+    git_log_output = process.communicate()[0].strip().decode("utf-8").split('\n')
+
+    # print (git_log_output)
+    for git_log_output_line in git_log_output:
+        # removes non ascii characters
+        stripped = (c for c in git_log_output_line if 0 < ord(c) < 127)
+        stripped_line = ''.join(stripped)
+        
+        git_log_file_matcher = re.match(git_log_file_regex, stripped_line)
+        if git_log_file_matcher is not None:
+            if git_log_file_matcher.group(1):         
+                if commit_hash is not '':
+                    cursor.execute("insert into file_versions (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path) values ( %s, %s, %s, %s, to_timestamp(%s, 'Dy Mon DD HH24:MI:SS YYYY +-####'), %s, %s)", (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path))                  
+                    connection.commit()
+                commit_hash  = git_log_file_matcher.group(1)  
+
+            if git_log_file_matcher.group(2):
+                author_name  = git_log_file_matcher.group(2)
+            if git_log_file_matcher.group(3):
+                author_email = git_log_file_matcher.group(3) 
+            if git_log_file_matcher.group(4):
+                author_date  = git_log_file_matcher.group(4)
+            if git_log_file_matcher.group(5):
+                version_path = git_log_file_matcher.group(5).strip()
+                older_version_path = ''
+                if '=>' in version_path:
+                    print (version_path)
+                    if '{' in version_path :
+                        sub_string = version_path[version_path.find('{'): version_path.find('}')+1]
+                        difference_list = sub_string.split('=>')
+                        if difference_list[0].replace('{', '') == ' ':
+                            older_version_path = git_log_file_matcher.group(5).strip().replace(sub_string + "/", sub_string.split('=>')[0].strip().replace('{','').replace('}',''))           
+                            version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[1].strip().replace('{','').replace('}','')) 
+
+                        elif difference_list[1].replace('}', '') == ' ':
+                            older_version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[0].strip().replace('{','').replace('}',''))           
+                            version_path = git_log_file_matcher.group(5).strip().replace(sub_string + "/", sub_string.split('=>')[1].strip().replace('{','').replace('}','')) 
+
+                        else:
+                            older_version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[0].strip().replace('{','').replace('}',''))
+                            version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[1].strip().replace('{','').replace('}',''))
+                    else:
+                        older_version_path = git_log_file_matcher.group(5).split('=>')[0].strip()
+                        version_path = git_log_file_matcher.group(5).split('=>')[1].strip()
+
+    # last line of the file
+    cursor.execute("insert into file_versions (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path) values ( %s, %s, %s, %s, to_timestamp(%s, 'Dy Mon DD HH24:MI:SS YYYY +-####'), %s, %s)", (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path))
+    connection.commit()
+
+
+def extract_file_versions(repository_id, repository_name):
 
     repository_path = DiretoryConfig.get_parameter('repository_directory') + repository_name
     git_log_file_regex = FileHandlerConfig.get_parameter('git_log_file_regex')
 
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor()
-
-    if not files_results :
-        cursor.execute('select id, file_path from files where repository_id = %s', (repository_id, ))
-        files_results =  cursor.fetchall()
+    
+    cursor.execute('select id, file_path from files where repository_id = %s', (repository_id, ))
+    files_results =  cursor.fetchall()
+    connection.close()
 
     for files_results_line in files_results:
 
         file_id = files_results_line[0]
         file_path = files_results_line[1]
+
+        execute_git_log_to_get_versions("git log --follow --stat=350 --stat-graph-width=2 -- ", file_id, file_path, repository_path)
     
-        commit_hash     = ''
-        author_name     = ''
-        author_email    = ''
-        author_date     = ''
-        version_path    = ''
-        older_version_path = ''
-
-        command = "git log --follow --stat=350 --stat-graph-width=2 -- " + file_path
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_path)
-        git_log_output = process.communicate()[0].strip().decode("utf-8").split('\n')
-
-        # print (git_log_output)
-        for git_log_output_line in git_log_output:
-            # removes non ascii characters
-            stripped = (c for c in git_log_output_line if 0 < ord(c) < 127)
-            stripped_line = ''.join(stripped)
-            
-            git_log_file_matcher = re.match(git_log_file_regex, stripped_line)
-            if git_log_file_matcher is not None:
-                if git_log_file_matcher.group(1):         
-                    if commit_hash is not '':
-                        cursor.execute("insert into file_versions (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path) values ( %s, %s, %s, %s, to_timestamp(%s, 'Dy Mon DD HH24:MI:SS YYYY +-####'), %s, %s)", (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path))                  
-                        connection.commit()
-                    commit_hash  = git_log_file_matcher.group(1)  
-
-                if git_log_file_matcher.group(2):
-                    author_name  = git_log_file_matcher.group(2)
-                if git_log_file_matcher.group(3):
-                    author_email = git_log_file_matcher.group(3) 
-                if git_log_file_matcher.group(4):
-                    author_date  = git_log_file_matcher.group(4)
-                if git_log_file_matcher.group(5):
-                    version_path = git_log_file_matcher.group(5).strip()
-                    older_version_path = ''
-                    if '=>' in version_path:
-                        print (version_path)
-                        if '{' in version_path :
-                            sub_string = version_path[version_path.find('{'): version_path.find('}')+1]
-                            difference_list = sub_string.split('=>')
-                            if difference_list[0].replace('{', '') == ' ':
-                                older_version_path = git_log_file_matcher.group(5).strip().replace(sub_string + "/", sub_string.split('=>')[0].strip().replace('{','').replace('}',''))           
-                                version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[1].strip().replace('{','').replace('}','')) 
-
-                            elif difference_list[1].replace('}', '') == ' ':
-                                older_version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[0].strip().replace('{','').replace('}',''))           
-                                version_path = git_log_file_matcher.group(5).strip().replace(sub_string + "/", sub_string.split('=>')[1].strip().replace('{','').replace('}','')) 
-
-                            else:
-                                older_version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[0].strip().replace('{','').replace('}',''))
-                                version_path = git_log_file_matcher.group(5).strip().replace(sub_string, sub_string.split('=>')[1].strip().replace('{','').replace('}',''))
-                        else:
-                            older_version_path = git_log_file_matcher.group(5).split('=>')[0].strip()
-                            version_path = git_log_file_matcher.group(5).split('=>')[1].strip()
-    
-        # last line of the file
-        cursor.execute("insert into file_versions (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path) values ( %s, %s, %s, %s, to_timestamp(%s, 'Dy Mon DD HH24:MI:SS YYYY +-####'), %s, %s)", (file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path))
-        connection.commit()
-    connection.close()
-
 def create_directory(path):
     if not os.path.exists(path):
         subprocess.call(["mkdir", "-p", path]) 
@@ -140,7 +158,7 @@ def checkout_file_versions(repository_id, repository_name, master_branch):
             file_extension = version_path.split('.')[-1]
 
             git_checkout = "git checkout " + commit_hash
-            cp_file = "cp " + version_path + " ../" + file_versions_directory +"/"+ str(file_id) + "_" + commit_hash +"."+  file_extension  
+            cp_file = "cp " + version_path + " ../" + file_versions_directory +"/"+ str(file_id)+ "_" + str(file_versions_id) + "_" + commit_hash +"."+  file_extension  
 
             print (cp_file)
 
@@ -207,15 +225,16 @@ def search_deleted_files(repository_id, repository_name, master_branch):
                     if file_regex_matcher is not None:
                         # print (version_path)
                         cursor.execute("select count(*) from file_versions where older_version_path = %s and commit_hash = %s", (version_path, commit_hash))
-                        already_stored = cursor.fetchone()[0]
-                        if already_stored == 0:
+                        found_in_database = cursor.fetchone()[0]
+                        if found_in_database == 0:
+                            print(found_in_database, version_path, commit_hash)
                             file_name = version_path.split('/')[-1]
-                            insert_file(repository_id, file_name, version_path, commit_hash)
+                            file_id = insert_file(repository_id, file_name, version_path, commit_hash)
+                            if file_id is not None:
+                                execute_git_log_to_get_versions("git log "+commit_hash+"^ --follow --stat=350 --stat-graph-width=2 -- ", file_id, version_path, repository_directory)
 
-                        print(result, version_path, commit_hash)
 
 repository_list = fetch_repositories()
-
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
@@ -226,5 +245,5 @@ for repository_entry in repository_list:
     # checkout_to_latest_version(repository_name, master_branch)
     # process_parseable_files(repository_id, repository_name)
     # extract_file_versions(repository_id, repository_name)
-    # checkout_file_versions(repository_id, repository_name, master_branch)
-    search_deleted_files(repository_id, repository_name, master_branch)
+    # search_deleted_files(repository_id, repository_name, master_branch)
+    checkout_file_versions(repository_id, repository_name, master_branch)

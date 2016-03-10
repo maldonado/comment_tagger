@@ -22,7 +22,7 @@ create table files (
     extracted_date timestamp default now(),
     name text,
     file_path text,
-    deletion_commit_hash default null,
+    deletion_commit_hash text default null,
     UNIQUE(repository_id,name,file_path)
 );
 
@@ -39,3 +39,27 @@ create table file_versions (
     has_parsed_file boolean default false,
     UNIQUE(file_id, commit_hash)
 );
+
+create table raw_comments (
+    id serial,
+    repository_id numeric, 
+    file_id numeric,
+    file_versions_id numeric,
+    commit_hash text,
+    comment_text text,
+    comment_type text,
+    comment_format text,
+    start_line numeric,
+    end_line numeric,
+    has_class_declaration boolean,
+    has_interface_declaration boolean,
+    has_enum_declaration boolean,
+    class_declaration_lines text
+);
+
+
+
+
+
+
+
