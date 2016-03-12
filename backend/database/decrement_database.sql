@@ -4,3 +4,4 @@ drop table files;
 drop table file_versions;
 drop table raw_comments;
 drop table processed_comments;
+drop table manually_classified_comments;

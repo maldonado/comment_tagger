@@ -7,10 +7,6 @@ from configkeys import HeuristicHandlerConfig
 from dbconnector import PSQLConnection
 from lxml import etree
 
-def create_directory(path):
-    if not os.path.exists(path):
-        subprocess.call(["mkdir", "-p", path]) 
-
 # example of expected tuple [('everton'), ('aries')] move elsewhere and extract class 
 def fetch_repositories(repo_list = tuple([])):
     connection = PSQLConnection.get_connection()
@@ -174,7 +170,36 @@ def merge_line_comments(repository_id):
 
     after = timeit.default_timer()
     print (after - before)
+
+def treat_comment_text(repository_id):
+    before = timeit.default_timer()
+
+    connection = PSQLConnection.get_connection()
+    cursor = connection.cursor()
+    cursor.execute("select comment_text, id from processed_comments where treated_comment_text is null and repository_id = %s", (repository_id, ))
+    processed_comment_list = cursor.fetchall()
     
+    formatted_comment_list = []
+    formatted_comment_id_list = []
+    
+    for processed_comment in processed_comment_list:
+        formatted_comment = " ".join(processed_comment[0].lower().replace('\n','').replace('\r\n', '').replace('\r', '').replace('\t', '').replace('//','').replace('/**','').replace('*/','').replace('/*','').replace('*','').replace(',','').replace(':','').replace('...','').replace(';','').split())
+        formatted_comment_list.append(formatted_comment)
+        formatted_comment_id_list.append(processed_comment[1])
+
+    progress_counter = 0
+    total_comments = len(formatted_comment_id_list)
+    
+    for x in range(0, total_comments):
+        progress_counter = progress_counter + 1
+        cursor.execute("update processed_comments set treated_comment_text = %s where id = %s", (formatted_comment_list[x], formatted_comment_id_list[x]))
+        connection.commit()
+        print(progress_counter, "out of: ", total_comments)
+    
+    connection.close()
+    after = timeit.default_timer()
+    print (after - before)
+
 
 repository_list = fetch_repositories()
 for repository_entry in repository_list:
@@ -189,3 +214,4 @@ for repository_entry in repository_list:
     comments_to_keep = remove_commented_source_code(comments_to_keep)
     insert_processed_comments(comments_to_keep)
     merge_line_comments(repository_id)
+    treat_comment_text(repository_id)

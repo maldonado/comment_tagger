@@ -79,6 +79,21 @@ create table processed_comments (
 );
 
 
+create table manually_classified_comments (
+    id serial,
+    project_origin text,
+    comment_text text, 
+    treated_comment_text text, 
+    classification text
+);
+
+insert into manually_classified_comments (project_origin, comment_text, treated_comment_text, classification) 
+    select a.projectname, b.commenttext, b.treated_commenttext, b.classification from comment_class a, processed_comment b where a.id = b.commentclassid 
+
+update manually_classified_comments set classification = 'WITHOUT_CLASSIFICATION' where classification = 'BUG_FIX_COMMENT';
+update manually_classified_comments set classification = 'REQUIREMENT' where classification = 'IMPLEMENTATION';
+delete from manually_classified_comments where treated_comment_text = ''
+
 
 
 

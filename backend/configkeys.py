@@ -28,6 +28,7 @@ class DiretoryConfig(object):
             'repository_directory' : '../cloned_repositories/',
             'file_versions_directory' : '../file_versions/',
             'parsed_files_directory' : '../parsed_files/',
+            'nlp_directory' : '../nlp_classifier/',
         }
         return configs[desired_path] 
 
@@ -76,6 +77,25 @@ class HeuristicHandlerConfig(object):
         return configs[desired_regex] 
 
 
+class NLPHandlerConfig(object):
+    
+    """docstring for NLPHandlerConfig"""
+    
+    def __init__(self, arg):
+        super(NLPHandlerConfig, self).__init__()
+        self.arg = arg
 
+    def get_parameter(desired_key):
+        configs = {
+            'training_dataset_name'     : 'classified_seq.train',
+            'test_dataset_name'         : 'classified_seq.test',
+            'classification_types'      : [('DESIGN'),('REQUIREMENT'),('WITHOUT_CLASSIFICATION')],
+            'comment_text_exact_regex'  : '(.+?)\t',
+            'output_regex'              : '(WITHOUT_CLASSIFICATION|DESIGN|REQUIREMENT)', 
+            'nlp_classifier_memory_use' : '-mx6144m',
+            
+        }
+        return configs[desired_key] 
+        
 
         
