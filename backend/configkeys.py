@@ -38,7 +38,6 @@ class TagHandlerConfig(object):
         super(TagHandlerConfig, self).__init__()
         self.arg = arg
 
-    # '\..*' = regex to remove invisible files/folders
     def get_parameter(desired_regex):
         configs = {
             'unwanted_file_regex' : '\..*',
@@ -53,7 +52,6 @@ class FileHandlerConfig(object):
         super(FileHandlerConfig, self).__init__()
         self.arg = arg
 
-    # '\..*' = regex to remove invisible files/folders
     def get_parameter(desired_regex):
         configs = {
             'parseable_files_regex' : '.*\.java$',
@@ -61,3 +59,23 @@ class FileHandlerConfig(object):
             'git_deleted_log_file_regex' : '^commit\s([a-z0-9]{40})$|Author:\s(.*?)\<(.*?)\>|Date:\s*([A-Za-z]{3}\s[A-Za-z]{3}\s\d{1,2}\s\d{2}:\d{2}:\d{2}\s\d{4}\s.\d{3,4})|\sdelete\smode\s100644\s(.*)'
         }
         return configs[desired_regex] 
+
+class HeuristicHandlerConfig(object):
+    """docstring for HeuristicHandlerConfig"""
+    
+    def __init__(self, arg):
+        super(HeuristicHandlerConfig, self).__init__()
+        self.arg = arg
+
+    def get_parameter(desired_regex):
+        configs = {
+            'exception_words_to_remove_javadoc_comments_regex' : 'TODO:|FIXME|XXX',
+            'exception_words_to_remove_license_comments_regex' : 'TODO:|FIXME|XXX',
+            'commented_source_code_regex' : 'else\s*\{|try\s*\{|do\s*\{|finally\s*\{|if\s*\(|for\s*\(|while\s*\(|switch\s*\(|Long\s*\(|Byte\s*\(|Double\s*\(|Float\s*\(|Integer\s*\(|Short\s*\(|BigDecimal\s*\(|BigInteger\s*\(|Character\s*\(|Boolean\s*\(|String\s*\(|assert\s*\(|System.out.|public\s*void|private\s*static\*final|catch\s*\('
+        }
+        return configs[desired_regex] 
+
+
+
+
+        

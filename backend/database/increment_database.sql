@@ -54,6 +54,27 @@ create table raw_comments (
     has_class_declaration boolean,
     has_interface_declaration boolean,
     has_enum_declaration boolean,
+    has_annotation_declaration boolean,
+    class_declaration_lines text
+);
+
+create table processed_comments (
+    id numeric,
+    repository_id numeric, 
+    file_id numeric,
+    file_versions_id numeric,
+    commit_hash text,
+    comment_text text,
+    treated_comment_text text,
+    td_classification text,
+    comment_type text,
+    comment_format text,
+    start_line numeric,
+    end_line numeric,
+    has_class_declaration boolean,
+    has_interface_declaration boolean,
+    has_enum_declaration boolean,
+    has_annotation_declaration boolean,
     class_declaration_lines text
 );
 

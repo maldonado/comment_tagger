@@ -74,6 +74,7 @@ def extract_comments(repository_id, repository_name):
             has_class_declaration = False
             has_interface_declaration = False
             has_enum_declaration = False
+            has_annotation_declaration = False
 
             file_versions_id =  file_versions_line[0]
             commit_hash = file_versions_line[1]
@@ -103,6 +104,11 @@ def extract_comments(repository_id, repository_name):
                 class_declaration_lines.append(str(class_declaration_line))
                 has_enum_declaration = True
 
+            for element in root.iter("{http://www.srcML.org/srcML/src}annotation_defn"):
+                class_declaration_line = element.sourceline -1
+                class_declaration_lines.append(str(class_declaration_line))
+                has_annotation_declaration = True
+
 
             for element in root.iter("{http://www.srcML.org/srcML/src}comment"):
                 start_line = element.sourceline -1
@@ -119,7 +125,7 @@ def extract_comments(repository_id, repository_name):
                     else:
                         end_line = start_line
 
-                cursor.execute("insert into raw_comments (repository_id,file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, has_class_declaration, has_interface_declaration, has_enum_declaration, class_declaration_lines) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (repository_id, file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, has_class_declaration, has_interface_declaration, has_enum_declaration, ','.join(class_declaration_lines))) 
+                cursor.execute("insert into raw_comments (repository_id,file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, has_class_declaration, has_interface_declaration, has_enum_declaration, has_annotation_declaration, class_declaration_lines) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (repository_id, file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, has_class_declaration, has_interface_declaration, has_enum_declaration, has_annotation_declaration, ','.join(class_declaration_lines))) 
                 connection.commit()
 
     connection.close()
