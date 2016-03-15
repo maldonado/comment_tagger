@@ -94,6 +94,14 @@ update manually_classified_comments set classification = 'WITHOUT_CLASSIFICATION
 update manually_classified_comments set classification = 'REQUIREMENT' where classification = 'IMPLEMENTATION';
 delete from manually_classified_comments where treated_comment_text = ''
 
+alter table processed_comments add column introduced_version_commit_hash text;
+alter table processed_comments add column is_introduced_version boolean;
+alter table processed_comments add column introduced_version_author text;
+alter table processed_comments add column introduced_version_date timestamp;
+alter table processed_comments add column removed_version_commit_hash text;
+alter table processed_comments add column has_removed_version boolean;
+alter table processed_comments add column removed_version_author text;
+alter table processed_comments add column removed_version_date timestamp;
 
 
 

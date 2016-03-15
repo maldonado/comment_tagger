@@ -76,7 +76,6 @@ class HeuristicHandlerConfig(object):
         }
         return configs[desired_regex] 
 
-
 class NLPHandlerConfig(object):
     
     """docstring for NLPHandlerConfig"""
@@ -97,5 +96,16 @@ class NLPHandlerConfig(object):
         }
         return configs[desired_key] 
         
+class TDAuthorsHandlerConfig(object):
 
+    """docstring for TDAuthorsHandlerConfig"""
+
+    def __init__(self, arg):
+        super(TDAuthorsHandlerConfig, self).__init__()
+        self.arg = arg
         
+    def get_parameter(desired_key):
+        configs = {
+            'git_log_file_regex' : '^commit\s([a-z0-9]{40})$|Author:\s(.*?)\<(.*?)\>|Date:\s*([A-Za-z]{3}\s[A-Za-z]{3}\s\d{1,2}\s\d{2}:\d{2}:\d{2}\s\d{4}\s.\d{3,4})|(.*?)\|',
+        }
+        return configs[desired_key] 
