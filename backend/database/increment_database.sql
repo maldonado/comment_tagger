@@ -103,6 +103,11 @@ alter table processed_comments add column has_removed_version boolean;
 alter table processed_comments add column removed_version_author text;
 alter table processed_comments add column removed_version_date timestamp;
 
+alter table processed_comments add column interval_time_to_remove text;
+with temp as (select id, age(removed_version_date, introduced_version_date) as interval_time from processed_comments where has_removed_version = true)
+update processed_comments set interval_time_to_remove = t.interval_time from temp t where t.id = processed_comments.id 
+
+alter table processed_comments add column epoch_time_to_remove numeric;
 
 
 
