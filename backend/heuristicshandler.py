@@ -59,7 +59,7 @@ def remove_license_comments(comments_to_keep):
     
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor()
-    cursor.execute("select id, comment_text, end_line, class_declaration_lines from raw_comments where id in %s", [tuple(comments_to_keep),])
+    cursor.execute("select id, comment_text, end_line, class_declaration_lines from raw_comments where id in %s and class_declaration_lines != '' ", [tuple(comments_to_keep),])
     raw_comment_results = cursor.fetchall()
     connection.close()
     
@@ -201,7 +201,7 @@ def treat_comment_text(repository_id):
     print (after - before)
 
 
-repository_list = fetch_repositories()
+repository_list = fetch_repositories([('jmeter')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
