@@ -92,6 +92,7 @@ class NLPHandlerConfig(object):
             'comment_text_exact_regex'  : '(.+?)\t',
             'output_regex'              : '(WITHOUT_CLASSIFICATION|DESIGN|REQUIREMENT)', 
             'nlp_classifier_memory_use' : '-mx6144m',
+            'training_projects'         : [('apache-ant-1.7.0'), ('emf-2.4.1'), ('jruby-1.4.0'), ('apache-jmeter-2.10'), ('jfreechart-1.0.19'), ('argouml'), ('hibernate-distribution-3.3.2.GA'), ('sql12'), ('jEdit-4.2'), ('columba-1.4-src')],
             
         }
         return configs[desired_key] 

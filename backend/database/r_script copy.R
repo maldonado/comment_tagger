@@ -51,13 +51,14 @@ title(paste('Non self-removal of ', data1$project_name[1]), ylab="Number of days
 library(RPostgreSQL)
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, host='localhost', port='5432', dbname='comment_classification', user='evermal', password='')
-# postgresql <- dbSendQuery(con, "select epoch_time_to_remove from processed_comments where has_removed_version = true and td_classification = 'DESIGN' ")
-postgresql <- dbSendQuery(con, "select epoch_time_to_remove from processed_comments where has_removed_version = true and td_classification =  'REQUIREMENT' ")
+postgresql <- dbSendQuery(con, "select epoch_time_to_remove from processed_comments where has_removed_version = true and td_classification = 'DESIGN' ")
+# postgresql <- dbSendQuery(con, "select epoch_time_to_remove from processed_comments where has_removed_version = true and td_classification =  'REQUIREMENT' ")
 
 data1 <- fetch(postgresql, n=-1)
 dim(data1)
 dbHasCompleted(postgresql)
 median(data1$epoch_time_to_remove/86400)
+mean(data1$epoch_time_to_remove/86400)
 
 # Different types of TD violin plot
 library(RPostgreSQL)

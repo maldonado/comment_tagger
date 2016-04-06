@@ -201,7 +201,7 @@ def treat_comment_text(repository_id):
     print (after - before)
 
 
-repository_list = fetch_repositories([('jmeter')])
+repository_list = fetch_repositories([('tomcat'), ('log4j')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]

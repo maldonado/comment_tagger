@@ -130,7 +130,7 @@ def extract_comments(repository_id, repository_name):
 
     connection.close()
           
-repository_list = fetch_repositories()
+repository_list = fetch_repositories([('camel'), ('tomcat')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
@@ -138,5 +138,5 @@ for repository_entry in repository_list:
     repository_url  = repository_entry[3]
     repository_cloned_date = repository_entry[4]
 
-    # parse_files_using_srcml(repository_id, repository_name)
+    parse_files_using_srcml(repository_id, repository_name)
     extract_comments(repository_id, repository_name)

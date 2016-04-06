@@ -110,3 +110,5 @@ for repository_entry in repository_list:
     repository_cloned_date = repository_entry[4]
     
     search_authors(repository_id, repository_name)
+    # calculate_interval_time_to_removal(repository_id)
+    # calculate_epoch_time_to_removal(repository_idq)
