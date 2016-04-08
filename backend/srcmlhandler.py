@@ -187,15 +187,25 @@ def test():
 
             if "package" in next_element.tag or "class" in next_element.tag:
                 comment_position = "CLASS"
-                # print (next_element.tag, comment_position)
+                print (next_element.tag, comment_position, next_element.sourceline -2)
 
             elif "decl_stmt" in next_element.tag:
                 comment_position = "FIELD"
-                # print (next_element.tag, comment_position)
+                print (next_element.tag, comment_position, next_element.sourceline -2)
 
             elif "comment" in next_element.tag:
-                parent = next_element.getparent()
-                print (parent.tag)
+                # print(next_element.tag)
+                next_element = next_element.getnext()
+            
+                if next_element is not None:
+                    if "package" in next_element.tag or "class" in next_element.tag:
+                        comment_position = "CLASS"
+                        print (next_element.tag, comment_position, next_element.sourceline -2)
+
+                    elif "decl_stmt" in next_element.tag:
+                        comment_position = "FIELD"
+                        print (next_element.tag, comment_position, next_element.sourceline -2)
+                    
 
 
         
