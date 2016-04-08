@@ -1,9 +1,5 @@
 import os
-import re
-import sys
 import subprocess
-import shutil
-
 
 from configkeys import DiretoryConfig
 from dbconnector import PSQLConnection
@@ -130,7 +126,89 @@ def extract_comments(repository_id, repository_name):
 
     connection.close()
           
-repository_list = fetch_repositories([('camel'), ('tomcat')])
+def test():
+
+    class_declaration_lines = []
+    has_class_declaration = False
+    has_interface_declaration = False
+    has_enum_declaration = False
+    has_annotation_declaration = False
+                                                     
+    parsed_file_output =  "/Users/evermal/Dropbox/5200_92913_694d5c7c069a468d2e57ef5729201e1b3faaf503.java"
+    print(parsed_file_output)
+    
+    try:
+        tree = etree.parse(parsed_file_output)
+        root = tree.getroot()
+
+    except Exception as e:
+        print(e)
+    
+    for element in root.iter("{http://www.srcML.org/srcML/src}class"):
+        class_declaration_line = element.sourceline -1
+        class_declaration_lines.append(str(class_declaration_line))
+        has_class_declaration = True
+
+    for element in root.iter("{http://www.srcML.org/srcML/src}interface"):
+        class_declaration_line = element.sourceline -1
+        class_declaration_lines.append(str(class_declaration_line))
+        has_interface_declaration = True
+
+    for element in root.iter("{http://www.srcML.org/srcML/src}enum"):
+        class_declaration_line = element.sourceline -1
+        class_declaration_lines.append(str(class_declaration_line))
+        has_enum_declaration = True
+
+    for element in root.iter("{http://www.srcML.org/srcML/src}annotation_defn"):
+        class_declaration_line = element.sourceline -1
+        class_declaration_lines.append(str(class_declaration_line))
+        has_annotation_declaration = True
+
+    for element in root.iter("{http://www.srcML.org/srcML/src}comment"):
+        comment_position = ''
+        method_signature = ''
+        start_line = element.sourceline -1
+        comment_text = element.text
+        comment_type = element.get("type")
+        comment_format = element.get("format")
+        
+        if comment_type == 'line':
+            end_line = start_line
+        else:
+            next_element = element.getnext()
+
+            if next_element is not None:
+                end_line = next_element.sourceline -2
+            else:
+                end_line = start_line
+        
+        next_element = element.getnext()
+        if next_element is not None:
+
+            if "package" in next_element.tag or "class" in next_element.tag:
+                comment_position = "CLASS"
+                # print (next_element.tag, comment_position)
+
+            elif "decl_stmt" in next_element.tag:
+                comment_position = "FIELD"
+                # print (next_element.tag, comment_position)
+
+            elif "comment" in next_element.tag:
+                parent = next_element.getparent()
+                print (parent.tag)
+
+
+        
+
+    print (class_declaration_lines)
+    print (has_class_declaration)
+    print (has_interface_declaration)
+    print (has_enum_declaration)
+    print (has_annotation_declaration)
+
+            
+
+repository_list = fetch_repositories([('gerrit')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
@@ -138,5 +216,6 @@ for repository_entry in repository_list:
     repository_url  = repository_entry[3]
     repository_cloned_date = repository_entry[4]
 
-    parse_files_using_srcml(repository_id, repository_name)
-    extract_comments(repository_id, repository_name)
+    # parse_files_using_srcml(repository_id, repository_name)
+    # extract_comments(repository_id, repository_name)
+    test()

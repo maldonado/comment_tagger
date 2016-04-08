@@ -1,12 +1,9 @@
-import os
 import re
-import sys
 import timeit
 import subprocess
 
 from configkeys import NLPHandlerConfig, DiretoryConfig
 from dbconnector import PSQLConnection
-from lxml import etree
 
 # example of expected tuple [('everton'), ('aries')] move elsewhere and extract class 
 def fetch_repositories(repo_list = tuple([])):

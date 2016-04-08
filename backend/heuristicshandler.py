@@ -1,11 +1,8 @@
-import os
 import re
-import sys
 import timeit
 
 from configkeys import HeuristicHandlerConfig
 from dbconnector import PSQLConnection
-from lxml import etree
 
 # example of expected tuple [('everton'), ('aries')] move elsewhere and extract class 
 def fetch_repositories(repo_list = tuple([])):
@@ -201,7 +198,7 @@ def treat_comment_text(repository_id):
     print (after - before)
 
 
-repository_list = fetch_repositories([('tomcat'), ('log4j')])
+repository_list = fetch_repositories([('gerrit')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]

@@ -1,8 +1,6 @@
 import os
 import re
-import sys
 import subprocess
-import shutil
 
 from configkeys import DiretoryConfig, FileHandlerConfig
 from dbconnector import PSQLConnection
@@ -61,10 +59,6 @@ def execute_git_log_to_get_versions(git_log_command, file_id, file_path, reposit
         git_log_output = process.communicate()[0].strip().split('\n')
     
         for git_log_output_line in git_log_output:
-            # removes non ascii characters
-            # stripped = (c for c in git_log_output_line if 0 < ord(c) < 127)
-            # stripped_line = ''.join(stripped)
-            # print (git_log_output_line)
             git_log_file_matcher = re.match(git_log_file_regex, git_log_output_line)
             if git_log_file_matcher is not None:
                 # print (git_log_output_line)
@@ -107,8 +101,8 @@ def execute_git_log_to_get_versions(git_log_command, file_id, file_path, reposit
         cursor.execute("insert into file_versions (repository_id, file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path) values (%s, %s, %s, %s, %s, to_timestamp(%s, 'Dy Mon DD HH24:MI:SS YYYY +-####'), %s, %s)", (repository_id, file_id, commit_hash, author_name, author_email, author_date, version_path, older_version_path))
         connection.commit()
 
-    except Exception:
-        pass
+    except Exception as e:
+        print (e)
 
 def extract_file_versions(repository_id, repository_name):
 
@@ -152,10 +146,10 @@ def checkout_file_versions(repository_id, repository_name, master_branch):
         try:
             git_checkout = "git checkout " + commit_hash
             command = git_checkout
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_directory)
-            git_log_output = process.communicate()[0].strip().decode("utf-8").split('\n')
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_directory, universal_newlines=True)
+            git_log_output = process.communicate()[0].strip().split('\n')
             
-            print(git_log_output)
+            # print(git_log_output)
 
             cursor.execute('select id, commit_hash, version_path, file_id from file_versions where commit_hash = %s and has_local_file is false', (commit_hash, ))
             file_vesions_result = cursor.fetchall()
@@ -168,19 +162,19 @@ def checkout_file_versions(repository_id, repository_name, master_branch):
                 file_id = file_versions_line[3]
 
                 cp_file = "cp " + version_path + " ../" + file_versions_directory +"/"+ str(file_id)+ "_" + str(file_versions_id) + "_" + commit_hash +"."+  file_extension  
-                print(cp_file)
+                # print(cp_file)
 
                 command = cp_file
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_directory)
-                git_log_output = process.communicate()[0].strip().decode("utf-8").split('\n')
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_directory, universal_newlines=True)
+                git_log_output = process.communicate()[0].strip().split('\n')
 
-                print (git_log_output)
+                # print (git_log_output)
 
                 cursor.execute("update file_versions set has_local_file = true where id = %s", (file_versions_id, ))
                 connection.commit()
             
-        except Exception:
-            pass
+        except Exception as e:
+            print (e)
         
     connection.close()
     checkout_to_latest_version(repository_name, master_branch)
@@ -206,8 +200,8 @@ def search_deleted_files(repository_id, repository_name, master_branch):
 
     try:
         command = "git log --diff-filter=D --summary"
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_directory)
-        git_log_output = process.communicate()[0].strip().decode("utf-8").split('\n')
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, shell=True, cwd=repository_directory, universal_newlines=True)
+        git_log_output = process.communicate()[0].strip().split('\n')
     
         commit_hash     = ''
         author_name     = ''
@@ -216,15 +210,10 @@ def search_deleted_files(repository_id, repository_name, master_branch):
         version_path    = ''
 
         for git_log_output_line in git_log_output:
-                # removes non ascii characters
-                stripped = (c for c in git_log_output_line if 0 < ord(c) < 127)
-                stripped_line = ''.join(stripped)
-                # print (stripped_line)
                 
-                git_log_file_matcher = re.match(git_deleted_log_file_regex, stripped_line)
+                git_log_file_matcher = re.match(git_deleted_log_file_regex, git_log_output_line)
                 if git_log_file_matcher is not None:
-                    pass
-                    # print(stripped_line)
+                    
                     if git_log_file_matcher.group(1):         
                         commit_hash  = git_log_file_matcher.group(1)
                         # print (commit_hash)
@@ -250,8 +239,8 @@ def search_deleted_files(repository_id, repository_name, master_branch):
                                 file_id = insert_file(repository_id, file_name, version_path, commit_hash)
                                 if file_id is not None:   
                                     execute_git_log_to_get_versions("git log "+commit_hash+"^ --follow --stat=350 --stat-graph-width=2 -- ", file_id, version_path, repository_directory, repository_id)
-    except Exception:
-        pass
+    except Exception as e:
+        print (e)
 
 def clean_dataset(repository_id):
     connection = PSQLConnection.get_connection()
