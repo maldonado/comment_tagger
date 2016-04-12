@@ -52,12 +52,24 @@ create table raw_comments (
     comment_format text,
     start_line numeric,
     end_line numeric,
+    comment_location text, 
+    func_specifier text, 
+    func_return_type text, 
+    func_name text, 
+    func_parameter_list text,
     has_class_declaration boolean,
     has_interface_declaration boolean,
     has_enum_declaration boolean,
     has_annotation_declaration boolean,
     class_declaration_lines text
 );
+
+-- alter table raw_comments add column comment_location text;
+-- alter table raw_comments add column func_specifier text;
+-- alter table raw_comments add column func_return_type text;
+-- alter table raw_comments add column func_name text;
+-- alter table raw_comments add column func_parameter_list text;
+-- alter table raw_comments drop column func_parameter_list;
 
 with temp as (select id, repository_id from files )
 update file_versions set repository_id = t.repository_id from temp t where t.id = file_versions.file_id 
