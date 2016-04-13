@@ -6,7 +6,7 @@ connection = psycopg2.connect(host='localhost', port='5432', database='comment_c
 cursor = connection.cursor()
 
 
-cursor.execute("select b.treated_commenttext, a.comment_classification from technical_debt_summary a, processed_comment b where a.processed_comment_id = b.id and  a.project_name = 'apache-ant' and a.comment_classification in ('DESIGN', 'REQUIREMENT')")
+cursor.execute("select b.treated_commenttext, a.comment_classification from technical_debt_summary a, processed_comment b where a.processed_comment_id = b.id and  a.project_name = 'apache-jmeter' and a.comment_classification in ('DESIGN')")
 results = cursor.fetchall()
 
 total_files_to_process = len(results)
@@ -27,7 +27,7 @@ for result in results:
     treated_comment_text      = result[0]
     manual_classification     = result[1]
     
-    cursor.execute("select distinct(td_classification) from processed_comments where treated_comment_text = %s and repository_id = 2", (treated_comment_text, ))
+    cursor.execute("select distinct(td_classification) from processed_comments where treated_comment_text = %s and repository_id = 3", (treated_comment_text, ))
     automatic_classification_result = cursor.fetchone()
 
     if automatic_classification_result is None:
@@ -36,6 +36,9 @@ for result in results:
         automatic_classification = automatic_classification_result[0]
 
         if automatic_classification == manual_classification:
+            
+            # print(manual_classification, "," , automatic_classification, ",", treated_comment_text)
+
             agreement_counter = agreement_counter + 1
             if manual_classification == "DESIGN": 
                 right_design_debt_counter =  right_design_debt_counter + 1
@@ -43,6 +46,7 @@ for result in results:
                 right_requirement_debt_counter = right_requirement_debt_counter + 1 
             
         else:
+            print(manual_classification, "," , automatic_classification, ",", treated_comment_text)
             disagreement_counter = disagreement_counter + 1
 
             if manual_classification == "DESIGN" and automatic_classification == "WITHOUT_CLASSIFICATION":
@@ -57,7 +61,7 @@ for result in results:
             else:
                 requirement_missclassified_as_design = requirement_missclassified_as_design + 1
             
-        print (progress_counter ,' out of :', total_files_to_process)
+        # print (progress_counter ,' out of :', total_files_to_process)
 
 print ("total TD comments with same classification (tool vs manual): ", agreement_counter, " of :", total_files_to_process)
 print ("design agreement: ", right_design_debt_counter, "requirement agreement: ", right_requirement_debt_counter)
