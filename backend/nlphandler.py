@@ -54,7 +54,7 @@ def classify_comments(repository_id):
 
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor() 
-    cursor.execute("select 'WITHOUT_CLASSIFICATION' as classification, distinct(treated_comment_text) from processed_comments where repository_id = %s and td_classification is null group by 2", (repository_id, ))
+    cursor.execute("select 'WITHOUT_CLASSIFICATION' as classification, treated_comment_text from processed_comments where repository_id = %s and td_classification is null group by 2", (repository_id, ))
     all_comments_from_repository = cursor.fetchall()
     
     write_formated_file(test_dataset_path , all_comments_from_repository)
@@ -72,43 +72,54 @@ def classify_comments(repository_id):
     # print(output)
     # print(results)
 
-    match_counter = 0
+    # match_counter = 0
     for comment in all_comments_from_repository:
-        before = timeit.default_timer()
+        # before = timeit.default_timer()
         treated_comment_text = comment[1]
 
 
         for line in output:
             comment_text_exact_matcher = re.match(comment_text_exact_regex, line)
-            comment_text_from_output = comment_text_exact_matcher.group(1)
+            if comment_text_exact_matcher is not None:
+                comment_text_from_output = comment_text_exact_matcher.group(1)
 
-            if treated_comment_text == comment_text_from_output :
-                output_without_comment = line.replace(treated_comment_text, '')
-                output_matcher = re.findall(output_regex, line)
+                if treated_comment_text == comment_text_from_output :
+                    output_without_comment = line.replace(treated_comment_text, '')
+                    output_matcher = re.findall(output_regex, line)
 
-                if output_matcher is not None:
-                    golden_anwser = output_matcher[0].replace('\'', '')
-                    nlp_tool_classification = output_matcher[1].replace('\'', '')
-                    match_counter = match_counter + 1
+                    if output_matcher is not None:
+                        golden_anwser = output_matcher[0].replace('\'', '')
+                        nlp_tool_classification = output_matcher[1].replace('\'', '')
+                        # match_counter = match_counter + 1
 
-                    cursor.execute("update processed_comments set td_classification = %s where treated_comment_text = %s and repository_id = %s" , (nlp_tool_classification, treated_comment_text, repository_id))
-                    connection.commit()
-                    after = timeit.default_timer()
-                    # print (after - before)
-                    break
- 
+                        cursor.execute("update processed_comments set td_classification = %s where treated_comment_text = %s and repository_id = %s" , (nlp_tool_classification, treated_comment_text, repository_id))
+                        connection.commit()
+                        # after = timeit.default_timer()
+                        # print (after - before)
+                        break
+            else:
+                print(line)
+                
     subprocess.call("rm " + test_dataset_path , shell=True)
-    print(match_counter)
+    # print(match_counter)
 
+repository_list = fetch_repositories([('hadoop'), ('log4j'), ('gerrit')])
+generate_training_dataset()
 
-repository_list = fetch_repositories()
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
     master_branch   = repository_entry[2]
     repository_url  = repository_entry[3]
     repository_cloned_date = repository_entry[4]
+    
+    print("Classifying : " , repository_name)
+    process_start = timeit.default_timer()
 
-    generate_training_dataset()
+    pre_process_comments(repository_id)
     classify_comments(repository_id)
-    delete_training_dataset()
+
+    process_end = timeit.default_timer()
+    print ("Total processing time: ", process_end - process_start)
+
+delete_training_dataset()

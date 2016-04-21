@@ -6,30 +6,31 @@ connection = psycopg2.connect(host='localhost', port='5432', database='comment_c
 cursor = connection.cursor()
 
 
-cursor.execute("select b.treated_commenttext, 'TECHNICAL_DEBT' as comment_classification from technical_debt_summary a, processed_comment b where a.processed_comment_id = b.id and  a.project_name = 'apache-jmeter' and a.comment_classification in ('DESIGN', 'REQUIREMENT', 'DOCUMENTATION', 'TEST', 'DEFECT')")
+cursor.execute("select b.treated_commenttext, a.version_introduced_commit_hash  from technical_debt_summary a, processed_comment b where a.processed_comment_id = b.id and  a.project_name = 'apache-jmeter' and a.comment_classification in ('DESIGN')")
 results = cursor.fetchall()
 
 total_files_to_process = len(results)
 progress_counter = 0
 
-right_design_debt_counter = 0
-right_requirement_debt_counter = 0
-agreement_counter = 0
-disagreement_counter = 0
-design_missclassified_as_without_classification = 0
-design_missclassified_as_requirement =0
-requirement_missclassified_as_without_classification =0
-requirement_missclassified_as_design=0
+# right_design_debt_counter = 0
+# right_requirement_debt_counter = 0
+# agreement_counter = 0
+# disagreement_counter = 0
+# design_missclassified_as_without_classification = 0
+# design_missclassified_as_requirement =0
+# requirement_missclassified_as_without_classification =0
+# requirement_missclassified_as_design=0
 
 for result in results:
     progress_counter = progress_counter + 1
 
     treated_comment_text      = result[0]
-    manual_classification     = result[1]
-    
-    cursor.execute("select distinct(td_classification) from processed_comments where treated_comment_text = %s and repository_id = 2", (treated_comment_text, ))
+    summary_td_
+
+    cursor.execute("select  from processed_comments where treated_comment_text = %s and repository_id = 2", (treated_comment_text, ))
     automatic_classification_result = cursor.fetchone()
 
+    
     if automatic_classification_result is None:
         print ("error")
     else:

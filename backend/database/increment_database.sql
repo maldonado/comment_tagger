@@ -64,15 +64,15 @@ create table raw_comments (
     class_declaration_lines text
 );
 
--- alter table raw_comments add column comment_location text;
--- alter table raw_comments add column func_specifier text;
--- alter table raw_comments add column func_return_type text;
--- alter table raw_comments add column func_name text;
--- alter table raw_comments add column func_parameter_list text;
--- alter table raw_comments drop column func_parameter_list;
+alter table raw_comments add column comment_location text;
+alter table raw_comments add column func_specifier text;
+alter table raw_comments add column func_return_type text;
+alter table raw_comments add column func_name text;
+alter table raw_comments add column func_parameter_list text;
+alter table raw_comments add column func_line numeric;
 
-with temp as (select id, repository_id from files )
-update file_versions set repository_id = t.repository_id from temp t where t.id = file_versions.file_id 
+create unique index  id_raw_comenst_index on raw_comments (id);
+create index repository_id_raw_comment_index on raw_comments (repository_id);
 
 create table processed_comments (
     id numeric,
@@ -94,6 +94,47 @@ create table processed_comments (
     class_declaration_lines text
 );
 
+create table aux_last_found_version_before_removal (
+    processed_comment_id numeric,
+    last_found_commit_hash text,
+    last_found_comment_location text,
+    last_found_func_specifier text,
+    last_found_func_return_type text,
+    last_found_func_name text,
+    last_found_func_parameter_list text,
+    last_found_func_line numeric
+)
+
+alter table processed_comments add column 
+alter table processed_comments add column 
+alter table processed_comments add column 
+alter table processed_comments add column 
+alter table processed_comments add column 
+alter table processed_comments add column 
+
+
+alter table processed_comments add column introduced_version_commit_hash text;
+alter table processed_comments add column is_introduced_version boolean;
+alter table processed_comments add column introduced_version_author text;
+alter table processed_comments add column introduced_version_date timestamp;
+alter table processed_comments add column removed_version_commit_hash text;
+alter table processed_comments add column has_removed_version boolean;
+alter table processed_comments add column removed_version_author text;
+alter table processed_comments add column removed_version_date timestamp;
+alter table processed_comments add column comment_location text;
+alter table processed_comments add column func_specifier text;
+alter table processed_comments add column func_return_type text;
+alter table processed_comments add column func_name text;
+alter table processed_comments add column func_parameter_list text;
+alter table processed_comments add column func_line numeric;
+alter table processed_comments add column interval_time_to_remove text;
+alter table processed_comments add column epoch_time_to_remove numeric;
+
+create unique index id_processed_comments_index on processed_comments (id);
+create index file_versions_id_processed_comments_index on processed_comments (file_versions_id);
+create index repository_id_processed_comments_index on processed_comments (repository_id);
+create index treated_comment_text_processed_comments_index on processed_comments (treated_comment_text);
+
 
 create table manually_classified_comments (
     id serial,
@@ -110,22 +151,5 @@ update manually_classified_comments set classification = 'WITHOUT_CLASSIFICATION
 update manually_classified_comments set classification = 'REQUIREMENT' where classification = 'IMPLEMENTATION';
 delete from manually_classified_comments where treated_comment_text = ''
 
-alter table processed_comments add column introduced_version_commit_hash text;
-alter table processed_comments add column is_introduced_version boolean;
-alter table processed_comments add column introduced_version_author text;
-alter table processed_comments add column introduced_version_date timestamp;
-alter table processed_comments add column removed_version_commit_hash text;
-alter table processed_comments add column has_removed_version boolean;
-alter table processed_comments add column removed_version_author text;
-alter table processed_comments add column removed_version_date timestamp;
-
--- move to class
-alter table processed_comments add column interval_time_to_remove text;
-with temp as (select id, age(removed_version_date, introduced_version_date) as interval_time from processed_comments where has_removed_version = true)
-update processed_comments set interval_time_to_remove = t.interval_time from temp t where t.id = processed_comments.id 
-
-alter table processed_comments add column epoch_time_to_remove numeric;
-
-
-
-
+with temp as (select id, repository_id from files)
+update file_versions set repository_id = t.repository_id from temp t where t.id = file_versions.file_id 

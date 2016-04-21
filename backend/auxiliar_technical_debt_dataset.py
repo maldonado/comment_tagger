@@ -24,6 +24,9 @@ def generate_training_dataset():
     number_of_without_classification_comments = 0
     number_of_design_debt_comments = 0
     number_of_requirement_debt_comments = 0
+    number_of_documentation_debt_comments = 0
+    number_of_test_debt_comments = 0
+    number_of_defect_debt_comments = 0
 
     for count_result in count_results:
         classification = count_result[0]
@@ -32,29 +35,33 @@ def generate_training_dataset():
             number_of_without_classification_comments = count_result[1]
         if classification == "DESIGN":
             number_of_design_debt_comments = count_result[1]
+        if classification == "REQUIREMENT":
+            number_of_requirement_debt_comments = count_result[1]
+        if classification == "DOCUMENTATION":
+            number_of_documentation_debt_comments = count_result[1]
+        if classification == "TEST":
+            number_of_test_debt_comments = count_result[1]
+        if classification == "DEFECT":
+            number_of_defect_debt_comments = count_result[1]
 
-        # if classification == "REQUIREMENT":
-        #     number_of_requirement_debt_comments = count_result[1]
+    all_td_comments = number_of_design_debt_comments + number_of_documentation_debt_comments + number_of_defect_debt_comments + number_of_requirement_debt_comments + number_of_test_debt_comments    
+    times_to_select_td = int (number_of_without_classification_comments / all_td_comments)
+    
 
-    # times_to_select_design = int (number_of_without_classification_comments / number_of_design_debt_comments)
-    # times_to_select_requirement = int (number_of_without_classification_comments / number_of_requirement_debt_comments)
 
-    # for x in range(1, times_to_select_design):
-    cursor.execute("select classification, treated_comment_text from manually_classified_comments where classification = 'DESIGN' and project_origin in %s", [tuple(training_projects), ])
+    # resampled upsized 
+    # for x in range(1, times_to_select_td):
+    #     cursor.execute("select 'TECHNICAL_DEBT' as classification, treated_comment_text from manually_classified_comments where classification != 'WITHOUT_CLASSIFICATION' and project_origin in %s", [tuple(training_projects), ])
+    #     write_formated_file(training_dataset_path, cursor.fetchall())
+
+    
+    cursor.execute("select 'TECHNICAL_DEBT' as classification, treated_comment_text from manually_classified_comments where classification != 'WITHOUT_CLASSIFICATION' and project_origin in %s", [tuple(training_projects), ])
     write_formated_file(training_dataset_path, cursor.fetchall())
-
-    # for x in range(1, times_to_select_design):
-    #     cursor.execute("select classification, treated_comment_text from manually_classified_comments where classification = 'DESIGN' and project_origin in %s", [tuple(training_projects), ])
-    #     write_formated_file(training_dataset_path, cursor.fetchall())
-
-    # for x in range(1, times_to_select_requirement):
-    #     cursor.execute("select classification, treated_comment_text from manually_classified_comments where classification = 'REQUIREMENT' and project_origin in %s", [tuple(training_projects), ])
-    #     write_formated_file(training_dataset_path, cursor.fetchall())
 
     cursor.execute("select classification, treated_comment_text from manually_classified_comments where classification = 'WITHOUT_CLASSIFICATION' and project_origin in %s", [tuple(training_projects), ])
     write_formated_file(training_dataset_path, cursor.fetchall())
 
-    # print(times_to_select_design , " x DESIGN")
+    print(times_to_select_td , " x all tds")
     # print(times_to_select_requirement, " x REQUIREMENT")
 
 generate_training_dataset()

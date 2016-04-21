@@ -264,9 +264,8 @@ def clean_dataset(repository_id):
     connection.close()
 
     
-repository_list = fetch_repositories([('gerrit')])
-# repository_list = fetch_repositories([('tomcat'), ('log4j')])
-# repository_list = fetch_repositories([('camel'), ('hadoop'), ('tomcat'), ('log4j')])
+repository_list = fetch_repositories([('log4j'), ('hadoop')])
+# repository_list = fetch_repositories([('hadoop')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]

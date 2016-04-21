@@ -17,6 +17,8 @@ def fetch_repositories(repo_list = tuple([])):
     return query_return
 
 def remove_javadoc_comments(repository_id):
+    print("remove javadoc comments")
+
     before = timeit.default_timer()
     exception_words_to_remove_javadoc_comments_regex = HeuristicHandlerConfig.get_parameter('exception_words_to_remove_javadoc_comments_regex')
     comments_to_keep = []
@@ -27,7 +29,6 @@ def remove_javadoc_comments(repository_id):
     cursor.execute("select id, comment_text, comment_type, comment_format from raw_comments where repository_id = %s", (repository_id, ))
     raw_comment_results = cursor.fetchall()
 
-    print (len(raw_comment_results))
     for raw_comment_line in raw_comment_results:
         raw_comment_id = raw_comment_line[0]
         comment_text = raw_comment_line[1]
@@ -38,20 +39,19 @@ def remove_javadoc_comments(repository_id):
             exception_words_to_remove_javadoc_comments_matcher = re.search(exception_words_to_remove_javadoc_comments_regex, comment_text)
             if exception_words_to_remove_javadoc_comments_matcher is not None:
                 comments_to_keep.append(raw_comment_id)
-                # print (raw_comment_id)
         else:
             comments_to_keep.append(raw_comment_id)
 
     connection.close()
 
     after = timeit.default_timer()
-    print (len(comments_to_keep))
-    print (after - before)
+    print(len(comments_to_keep))
+    print ("heuristic total time:", (after - before)/60)
     return comments_to_keep
 
 def remove_license_comments(comments_to_keep):
+    print("remove license comments")
     before = timeit.default_timer()
-    print (len(comments_to_keep))    
     exception_words_to_remove_license_comments_regex = HeuristicHandlerConfig.get_parameter('exception_words_to_remove_license_comments_regex')
     
     connection = PSQLConnection.get_connection()
@@ -71,16 +71,13 @@ def remove_license_comments(comments_to_keep):
             if exception_words_to_remove_license_comments_matcher is None:
                 comments_to_keep.remove(raw_comment_id)
 
-    print (len(comments_to_keep))
     after = timeit.default_timer()
-    print (after - before)
-
+    print ("heuristic total time:", (after - before)/60)
     return comments_to_keep
 
 def remove_commented_source_code(comments_to_keep):
+    print ("remove commented source code")
     before = timeit.default_timer()
-    
-    print (len(comments_to_keep))    
     commented_source_code_regex = HeuristicHandlerConfig.get_parameter('commented_source_code_regex')
     
     connection = PSQLConnection.get_connection()
@@ -95,28 +92,27 @@ def remove_commented_source_code(comments_to_keep):
         
         commented_source_code_matcher = re.search(commented_source_code_regex, comment_text)
         if commented_source_code_matcher is not None:
-            # print (raw_comment_id)
             comments_to_keep.remove(raw_comment_id)
 
-    print (len(comments_to_keep))
     after = timeit.default_timer()
-    print (after - before)
-
+    print ("heuristic total time:", (after - before)/60)
     return comments_to_keep
 
 def insert_processed_comments(comments_to_keep):
+    print ("insert processed comments")
     before = timeit.default_timer()
     
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor() 
-    cursor.execute("insert into processed_comments(id, repository_id,  file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, has_class_declaration, has_interface_declaration, has_enum_declaration, has_annotation_declaration, class_declaration_lines) select id, repository_id,  file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, has_class_declaration, has_interface_declaration, has_enum_declaration, has_annotation_declaration, class_declaration_lines from raw_comments where id in %s", [tuple(comments_to_keep),])
+    cursor.execute("insert into processed_comments(id, repository_id,  file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, comment_location,func_specifier,func_return_type,func_name,func_parameter_list,func_line, has_class_declaration, has_interface_declaration, has_enum_declaration, has_annotation_declaration, class_declaration_lines) select id, repository_id,  file_id, file_versions_id, commit_hash, comment_text, comment_type, comment_format, start_line, end_line, comment_location,func_specifier,func_return_type,func_name,func_parameter_list,func_line, has_class_declaration, has_interface_declaration, has_enum_declaration, has_annotation_declaration, class_declaration_lines from raw_comments where id in %s", [tuple(comments_to_keep),])
     connection.commit()
     connection.close()
 
     after = timeit.default_timer()
-    print (after - before)
+    print ("heuristic total time:", (after - before)/60)
 
 def merge_line_comments(repository_id):
+    print("merge line comments")
     before = timeit.default_timer()
 
     connection = PSQLConnection.get_connection()
@@ -126,7 +122,7 @@ def merge_line_comments(repository_id):
     
     for file_version in file_versions:
         file_versions_id = file_version[0]
-        print("file version:", file_versions_id)
+        # print("file version:", file_versions_id)
         
         cursor.execute("select id, comment_text,  end_line from processed_comments where file_versions_id = %s and comment_type = 'line' order by end_line", (file_versions_id, ))
         sorted_comments = cursor.fetchall()
@@ -145,15 +141,10 @@ def merge_line_comments(repository_id):
             comment_message = comment[1]
 
             while comment[2] - next_comment[2] == -1:
-                print (comment_id)
-                # print (comment_message)
-                
                 comment_message = comment_message + " " + next_comment[1]
                 new_end_line = next_comment[2] 
-                
-                print ("new end line:", new_end_line)
-                print ("new commit message:", comment_message)
-                
+                # print ("new end line:", new_end_line)
+                # print ("new commit message:", comment_message)
                 cursor.execute("update processed_comments set end_line = %s, comment_text= %s, comment_format = 'multiline' where id = %s", (new_end_line, comment_message, comment_id))
                 cursor.execute("delete from processed_comments where id = %s" , (next_comment[0], ))
                 connection.commit()
@@ -166,9 +157,10 @@ def merge_line_comments(repository_id):
                 comment = next_comment
 
     after = timeit.default_timer()
-    print (after - before)
+    print ("heuristc total time:", (after - before)/60)
 
 def treat_comment_text(repository_id):
+    print ("text treatment to comments")
     before = timeit.default_timer()
 
     connection = PSQLConnection.get_connection()
@@ -183,22 +175,19 @@ def treat_comment_text(repository_id):
         formatted_comment = " ".join(processed_comment[0].lower().replace('\n','').replace('\r\n', '').replace('\r', '').replace('\t', '').replace('//','').replace('/**','').replace('*/','').replace('/*','').replace('*','').replace(',','').replace(':','').replace('...','').replace(';','').split())
         formatted_comment_list.append(formatted_comment)
         formatted_comment_id_list.append(processed_comment[1])
-
-    progress_counter = 0
-    total_comments = len(formatted_comment_id_list)
     
+    total_comments = len(formatted_comment_id_list)
+
     for x in range(0, total_comments):
-        progress_counter = progress_counter + 1
         cursor.execute("update processed_comments set treated_comment_text = %s where id = %s", (formatted_comment_list[x], formatted_comment_id_list[x]))
         connection.commit()
-        print(progress_counter, "out of: ", total_comments)
     
     connection.close()
     after = timeit.default_timer()
-    print (after - before)
+    print ("heuristc total time:", (after - before)/60)
 
 
-repository_list = fetch_repositories([('gerrit')])
+repository_list = fetch_repositories([('camel')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
