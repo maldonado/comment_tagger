@@ -94,17 +94,6 @@ create table processed_comments (
     class_declaration_lines text
 );
 
-create table aux_last_found_version_before_removal (
-    processed_comment_id numeric,
-    last_found_commit_hash text,
-    last_found_comment_location text,
-    last_found_func_specifier text,
-    last_found_func_return_type text,
-    last_found_func_name text,
-    last_found_func_parameter_list text,
-    last_found_func_line numeric
-)
-
 alter table processed_comments add column 
 alter table processed_comments add column 
 alter table processed_comments add column 
@@ -153,3 +142,23 @@ delete from manually_classified_comments where treated_comment_text = ''
 
 with temp as (select id, repository_id from files)
 update file_versions set repository_id = t.repository_id from temp t where t.id = file_versions.file_id 
+
+
+create table aux_last_found_version_before_removal (
+    processed_comment_id numeric,
+    last_found_commit_hash text,
+    last_found_comment_location text,
+    last_found_func_specifier text,
+    last_found_func_return_type text,
+    last_found_func_name text,
+    last_found_func_parameter_list text,
+    last_found_func_line numeric
+)
+
+alter table aux_last_found_version_before_removal add column last_found_author text;
+alter table aux_last_found_version_before_removal add column last_found_date timestamp;
+
+with temp as (select a.id, b.id as processed_comment_id, author_date, author_name from file_versions a, processed_comments b, aux_last_found_version_before_removal c where b.id = c.processed_comment_id and b.file_versions_id = a.id and b.commit_hash = a.commit_hash )
+update aux_last_found_version_before_removal set last_found_date = t.author_date, last_found_author = t.author_name from temp t where t.processed_comment_id = aux_last_found_version_before_removal.processed_comment_id 
+
+

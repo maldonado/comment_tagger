@@ -103,7 +103,7 @@ def search_last_commit_found(repository_id):
     connection = PSQLConnection.get_connection()
     cursor = connection.cursor() 
     
-    cursor.execute("select id, file_id, treated_comment_text from processed_comments where has_removed_version is true and repository_id = %s", (repository_id, ))
+    cursor.execute("select id, file_id, treated_comment_text from processed_comments where td_classification != 'WITHOUT_CLASSIFICATION' and id not in (select processed_comment_id from aux_last_found_version_before_removal) and repository_id = %s and is_introduced_version = true", (repository_id, ))
     all_removed_comments = cursor.fetchall()
 
     total_comments = len(all_removed_comments)
@@ -126,7 +126,7 @@ def search_last_commit_found(repository_id):
         last_found_func_name = result[4]
         last_found_func_parameter_list = result[5]
         last_found_func_line= result[6]
-
+        
         cursor.execute("insert into aux_last_found_version_before_removal (processed_comment_id, last_found_commit_hash ,last_found_comment_location ,last_found_func_specifier ,last_found_func_return_type ,last_found_func_name ,last_found_func_parameter_list ,last_found_func_line) values (%s,%s,%s,%s,%s,%s,%s,%s)", (processed_comment_id, last_found_commit_hash ,last_found_comment_location ,last_found_func_specifier ,last_found_func_return_type ,last_found_func_name ,last_found_func_parameter_list ,last_found_func_line))
         connection.commit()
         print(progress_counter, " out of: ", total_comments)
@@ -156,7 +156,7 @@ def calculate_epoch_time_to_removal(repository_id):
 
     connection.close()
         
-repository_list = fetch_repositories([('camel')])
+repository_list = fetch_repositories([('ant'), ('jmeter'), ('camel'), ('hadoop'), ('tomcat'), ('log4j'), ('gerrit')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
