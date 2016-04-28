@@ -1,0 +1,41 @@
+copy (select 
+    a.id,
+    c.name,
+    (select version_path from file_versions where commit_hash = a.introduced_version_commit_hash and file_id = a.file_id) as file_introduced_path,
+    a.introduced_version_commit_hash,
+    a.introduced_version_author, 
+    a.introduced_version_date,
+    a.comment_location, 
+    a.func_specifier,
+    a.func_return_type,
+    a.func_name,
+    a.func_parameter_list,
+    a.func_line,
+    a.has_removed_version,
+    a.removed_version_commit_hash,
+    a.removed_version_author,
+    a.removed_version_date,
+    (select version_path from file_versions where commit_hash = b.last_found_commit_hash and file_id = a.file_id) as last_found_path,
+    b.last_found_commit_hash,
+    b.last_found_author,
+    b.last_found_date,
+    b.last_found_comment_location,
+    b.last_found_func_specifier,
+    b.last_found_func_return_type,
+    b.last_found_func_name,
+    b.last_found_func_parameter_list,
+    b.last_found_func_line,
+    a.td_classification,
+    a.start_line,
+    a.end_line,
+    a.comment_text
+
+from 
+    processed_comments a, aux_last_found_version_before_removal b, files c 
+
+where 
+    a.id = b.processed_comment_id 
+    and a.file_id = c.id
+    and a.is_introduced_version = true
+    and a.repository_id = 5
+    order by a.id) to '/Users/evermal/Downloads/camel_automated_classification.csv' (format csv,  header true)
