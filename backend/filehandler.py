@@ -264,8 +264,7 @@ def clean_dataset(repository_id):
     connection.close()
 
     
-repository_list = fetch_repositories([('log4j'), ('hadoop')])
-# repository_list = fetch_repositories([('hadoop')])
+repository_list = fetch_repositories([('jruby')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]

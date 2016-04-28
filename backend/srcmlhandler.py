@@ -191,7 +191,7 @@ def extract_comments(repository_id, repository_name):
                 
     connection.close()            
 
-repository_list = fetch_repositories([('log4j'),('hadoop')])
+repository_list = fetch_repositories([('jruby')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]

@@ -116,18 +116,25 @@ def search_last_commit_found(repository_id):
         treated_comment_text = removed_comment[2]
 
         print(treated_comment_text)
-        cursor.execute("select distinct on (treated_comment_text) commit_hash, comment_location ,func_specifier ,func_return_type ,func_name ,func_parameter_list , func_line from processed_comments where treated_comment_text= %s and file_id = %s order by treated_comment_text, introduced_version_date desc limit 1 ", (treated_comment_text, file_id))
+        cursor.execute("select distinct on (treated_comment_text) commit_hash, comment_location ,func_specifier ,func_return_type ,func_name ,func_parameter_list , func_line, file_versions_id from processed_comments where treated_comment_text= %s and file_id = %s order by treated_comment_text, introduced_version_date desc limit 1 ", (treated_comment_text, file_id))
         result = cursor.fetchone()
 
-        last_found_commit_hash= result[0]
-        last_found_comment_location = result[1]
-        last_found_func_specifier = result[2]
-        last_found_func_return_type = result[3]
-        last_found_func_name = result[4]
+        last_found_commit_hash         = result[0]
+        last_found_comment_location    = result[1]
+        last_found_func_specifier      = result[2]
+        last_found_func_return_type    = result[3]
+        last_found_func_name           = result[4]
         last_found_func_parameter_list = result[5]
-        last_found_func_line= result[6]
+        last_found_func_line           = result[6]
+        file_versions_id               = result[7]
         
-        cursor.execute("insert into aux_last_found_version_before_removal (processed_comment_id, last_found_commit_hash ,last_found_comment_location ,last_found_func_specifier ,last_found_func_return_type ,last_found_func_name ,last_found_func_parameter_list ,last_found_func_line) values (%s,%s,%s,%s,%s,%s,%s,%s)", (processed_comment_id, last_found_commit_hash ,last_found_comment_location ,last_found_func_specifier ,last_found_func_return_type ,last_found_func_name ,last_found_func_parameter_list ,last_found_func_line))
+        cursor.execute("select author_date, author_name from file_versions where id = %s", (file_versions_id, ))
+        file_versions_result = cursor.fetchone()
+
+        last_found_date   = file_versions_result[0]
+        last_found_author = file_versions_result[1]
+
+        cursor.execute("insert into aux_last_found_version_before_removal (processed_comment_id, last_found_commit_hash ,last_found_comment_location ,last_found_func_specifier ,last_found_func_return_type ,last_found_func_name ,last_found_func_parameter_list ,last_found_func_line, last_found_author, last_found_date) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", (processed_comment_id, last_found_commit_hash ,last_found_comment_location ,last_found_func_specifier ,last_found_func_return_type ,last_found_func_name ,last_found_func_parameter_list ,last_found_func_line, last_found_author, last_found_date))
         connection.commit()
         print(progress_counter, " out of: ", total_comments)
 
@@ -155,8 +162,30 @@ def calculate_epoch_time_to_removal(repository_id):
         connection.commit()
 
     connection.close()
+
+def calculate_time_in_the_system(repository_id):
+    print("calculating interval time in the system")
+    connection = PSQLConnection.get_connection()
+    cursor = connection.cursor()
+    cursor.execute("select a.id, a.interval_time_to_remove, a.epoch_time_to_remove, age(b.last_found_date, a.introduced_version_date) as interval_time_in_the_system from processed_comments a, aux_last_found_version_before_removal b where a.id = b.processed_comment_id and a.is_introduced_version is true and a.repository_id = %s", (repository_id, ))
+    results = cursor.fetchall()
+
+    for result in results:
+        processed_comment_id          = result[0]
+        interval_time_to_remove       = result[1]
+        epoch_time_to_remove          = result[2]
+        interval_time_in_the_system   = str(result[3]) 
         
-repository_list = fetch_repositories([('ant'), ('jmeter'), ('camel'), ('hadoop'), ('tomcat'), ('log4j'), ('gerrit')])
+        if interval_time_to_remove is not None:
+            cursor.execute("update processed_comments set interval_time_in_the_system = %s , epoch_time_in_the_system = %s where id = %s ", (interval_time_to_remove, epoch_time_to_remove, processed_comment_id))
+            connection.commit()
+        else:
+            cursor.execute("update processed_comments set interval_time_in_the_system = %s , epoch_time_in_the_system = extract (epoch from interval '"+interval_time_in_the_system+"') where id = %s ", (interval_time_in_the_system, processed_comment_id))
+            connection.commit()
+
+        
+
+repository_list = fetch_repositories([('ant'), ('jmeter'), ('camel'), ('hadoop'), ('tomcat'), ('gerrit')])
 for repository_entry in repository_list:
     repository_id   = repository_entry[0]
     repository_name = repository_entry[1]
@@ -169,3 +198,4 @@ for repository_entry in repository_list:
     search_last_commit_found(repository_id)
     # calculate_interval_time_to_removal(repository_id)
     # calculate_epoch_time_to_removal(repository_id)
+    calculate_time_in_the_system(repository_id)
