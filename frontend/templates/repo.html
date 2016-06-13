@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Repo{% endblock %}
+
+{%block content %}
+
+<div class="container">
+	
+	{{ processed_comments }}
+
+	<div class="row">
+		<div class="col-xs-9">
+			
+		</div>
+  		<div class="col-xs-3">
+  			{% include "recent-repos.html" %}
+  		</div>
+	</div>
+
+</div>
+
+{% endblock %}
