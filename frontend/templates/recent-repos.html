@@ -1,0 +1,15 @@
+<h3>Recent repos</h3>
+<ul class="list-group">
+	{% for repository in recent_repositories %}
+	<li class="list-group-item">
+		<i class="fa fa-github fa-2x pull-left" aria-hidden="true"></i>
+		<span class="badge">Analyzed</span>
+		<a class="recent-repo" href="/repo/{{ repository.id }}">{{ repository.name }}</a>
+		<a href="{{ repository.clone_url }}" target="_blank">
+			<span class="glyphicon glyphicon-link"></span>
+		</a>
+		<br />
+		<small>Cloned: {{ repository.cloned_date }}</small>
+	</li>
+	{% endfor %}
+</ul> 
